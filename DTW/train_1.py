@@ -2,21 +2,22 @@
 """
 compare (SVM vs DTW)
 """
-import numpy as np
-import pandas as pd
+import argparse
 import os
 import sys
-import argparse
 import warnings
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.decomposition import KernelPCA
-from sklearn.svm import SVC
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import StratifiedKFold, GridSearchCV, train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
-from scipy.spatial.distance import euclidean
-from fastdtw import fastdtw
+
 import joblib
+import numpy as np
+import pandas as pd
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+from sklearn.decomposition import KernelPCA
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.svm import SVC
 
 # ===================== CONFIGURACIÓN =====================
 CSV_FILE = "datos_30.csv"     
@@ -24,6 +25,12 @@ DELIMITER = ','                  # Separador
 TEST_SIZE = 0.2                   # 20% para test
 RANDOM_STATE = 42
 N_JOBS = -1                       # Usar todos los núcleos
+DEFAULT_OUTPUT_DIR = "models"
+HAND_INDICES = [0, 1, 2]
+MODEL_FILENAMES = {
+    'svm': 'model_svm.joblib',
+    'dtw': 'model_dtw.joblib',
+}
 
 
 def percentile25(x, axis=0):
@@ -42,7 +49,7 @@ AGGREGATION_FUNCTIONS = [
 ]
 # =========================================================
 
-def load_data(csv_file, delimiter=','):
+def load_data(csv_file, delimiter=',', require_labels=True):
     """Carga el CSV y devuelve diccionarios de secuencias y etiquetas."""
     print(f"DEBUG: Cargando {csv_file} con delimitador '{delimiter}'...", flush=True)
     
@@ -56,14 +63,20 @@ def load_data(csv_file, delimiter=','):
     df.columns = df.columns.str.strip()
     if 'glosa' in df.columns:
         df['glosa'] = df['glosa'].str.strip()
+    elif require_labels:
+        raise ValueError("Columna 'glosa' faltante para entrenamiento/evaluación.")
+    else:
+        df['glosa'] = '__unknown__'
     if 'video' in df.columns:
         df['video'] = df['video'].str.strip()
+    else:
+        df['video'] = os.path.basename(csv_file)
     
     print(f"DEBUG: {len(df)} filas, {df['video'].nunique()} videos únicos", flush=True)
     print(f"DEBUG: Glosas únicas: {df['glosa'].nunique()} - {df['glosa'].unique()}", flush=True)
     
     # Verificar columnas
-    required_cols = ['glosa', 'video', 'frame', 'hand_index', 'handedness']
+    required_cols = ['glosa', 'video', 'frame', 'hand_index']
     for col in required_cols:
         if col not in df.columns:
             raise ValueError(f"Columna '{col}' faltante. Columnas: {list(df.columns)}")
@@ -92,7 +105,10 @@ def load_data(csv_file, delimiter=','):
         
         # Debug: imprimir solo los primeros 3 videos
         if len(sequences) <= 3:
-            print(f"  VIDEO: {video_id} - frames: {len(hand_group)}, manos: {list(hands.keys())}", flush=True)
+            print(
+                f"  VIDEO: {video_id} - frames: {len(group['frame'].unique())}, manos: {list(hands.keys())}",
+                flush=True,
+            )
     
     print(f"DEBUG: Total videos cargados: {len(sequences)}", flush=True)
     print(f"DEBUG: Total glosas: {len(set(labels.values()))}", flush=True)
@@ -106,7 +122,7 @@ def extract_aggregated_features(hands_dict):
     n_funcs = len(AGGREGATION_FUNCTIONS)
     
     features = []
-    for hand_idx in [0, 1]:  # Orden fijo
+    for hand_idx in HAND_INDICES:
         if hand_idx in hands_dict:
             seq = hands_dict[hand_idx]
             for func in AGGREGATION_FUNCTIONS:
@@ -135,30 +151,24 @@ class DTWClassifier:
         self.n_features = self.train_sequences[0].shape[1]
     
     def _flatten_hands(self, hands_dict):
-        """Combina ambas manos con padding de ceros si es necesario."""
-        # Obtener dimensionalidad de las manos presentes
-        seq0 = hands_dict.get(0)
-        seq1 = hands_dict.get(1)
-        
-        # Si no hay info de features aún, detectar
-        if seq0 is not None:
-            n_feat = seq0.shape[1]
-            n_frames = seq0.shape[0]
-        elif seq1 is not None:
-            n_feat = seq1.shape[1]
-            n_frames = seq1.shape[0]
-        else:
+        """Combina las manos configuradas con padding de ceros si es necesario."""
+        present_sequences = [hands_dict[idx] for idx in HAND_INDICES if idx in hands_dict]
+        if not present_sequences:
             raise ValueError("Video sin manos")
-        
-        # Crear mano faltante con ceros
-        if seq0 is None:
-            seq0 = np.zeros((n_frames, n_feat), dtype=np.float32)
-        if seq1 is None:
-            seq1 = np.zeros((n_frames, n_feat), dtype=np.float32)
-        
-        # Igualar frames
-        min_len = min(seq0.shape[0], seq1.shape[0])
-        combined = np.hstack([seq0[:min_len], seq1[:min_len]])
+
+        n_feat = present_sequences[0].shape[1]
+        min_len = min(seq.shape[0] for seq in present_sequences)
+
+        flattened_hands = []
+        for hand_idx in HAND_INDICES:
+            seq = hands_dict.get(hand_idx)
+            if seq is None:
+                seq = np.zeros((min_len, n_feat), dtype=np.float32)
+            else:
+                seq = seq[:min_len]
+            flattened_hands.append(seq)
+
+        combined = np.hstack(flattened_hands)
         return combined.astype(np.float32)
     
     def predict(self, sequences_dict):
@@ -179,6 +189,73 @@ class DTWClassifier:
                     dists.append(d)
             preds.append(self.train_labels[np.argmin(dists)])
         return np.array(preds)
+
+
+def ensure_output_dir(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+
+def get_model_path(output_dir, model_name):
+    return os.path.join(output_dir, MODEL_FILENAMES[model_name])
+
+
+def save_svm_artifact(model, label_encoder, kpca_cols, output_dir):
+    ensure_output_dir(output_dir)
+    path = get_model_path(output_dir, 'svm')
+    joblib.dump({
+        'model': model,
+        'le': label_encoder,
+        'agg_funcs': AGGREGATION_FUNCTIONS,
+        'n_kpca': len(kpca_cols),
+        'hand_indices': HAND_INDICES,
+    }, path)
+    return path
+
+
+def save_dtw_artifact(model, output_dir):
+    ensure_output_dir(output_dir)
+    path = get_model_path(output_dir, 'dtw')
+    joblib.dump({
+        'model': model,
+        'le': model.le,
+        'hand_indices': HAND_INDICES,
+    }, path)
+    return path
+
+
+def run_inference(model_name, input_csv, output_dir):
+    model_path = get_model_path(output_dir, model_name)
+    if not os.path.exists(model_path):
+        sys.exit(f"ERROR: No existe modelo guardado en {model_path}")
+
+    artifact = joblib.load(model_path)
+    sequences, _, _ = load_data(input_csv, delimiter=DELIMITER, require_labels=False)
+    if not sequences:
+        sys.exit("No hay secuencias en el CSV de entrada.")
+
+    video_ids = list(sequences.keys())
+
+    if model_name == 'svm':
+        X_input = prepare_svm_data(sequences)
+        predictions = artifact['model'].predict(X_input)
+        probabilities = None
+        if hasattr(artifact['model'], 'predict_proba'):
+            probabilities = artifact['model'].predict_proba(X_input)
+    else:
+        predictions = artifact['model'].predict(sequences)
+        probabilities = None
+
+    predicted_labels = artifact['le'].inverse_transform(predictions)
+    print("\n### PREDICCIONES ###")
+    for idx, video_id in enumerate(video_ids):
+        line = f"{video_id}: {predicted_labels[idx]}"
+        if probabilities is not None:
+            confidence = float(np.max(probabilities[idx]))
+            line += f" (confidence={confidence:.4f})"
+        print(line)
+
+
 def train_svm(X_train, y_train):
     """Entrena SVM con búsqueda de hiperparámetros."""
     pipe = Pipeline([
@@ -198,7 +275,7 @@ def train_svm(X_train, y_train):
         grid.fit(X_train, y_train)
     return grid.best_estimator_
 
-def compare_models(sequences, labels_dict, kpca_cols):
+def compare_models(sequences, labels_dict, kpca_cols, output_dir):
     """Compara SVM y DTW con el mismo split de datos."""
     print("\n### COMPARACIÓN SVM vs DTW ###", flush=True)
     
@@ -268,43 +345,39 @@ def compare_models(sequences, labels_dict, kpca_cols):
     print(confusion_matrix(le.transform(test_lab_dtw), dtw_pred))
     
     # Guardar modelos
-    joblib.dump({
-        'model': svm_model,
-        'le': le,
-        'agg_funcs': AGGREGATION_FUNCTIONS,
-        'n_kpca': len(kpca_cols)
-    }, 'model_svm.joblib')
-    joblib.dump({
-        'model': dtw_model,
-        'le': le
-    }, 'model_dtw.joblib')
-    print("\n Modelos guardados: model_svm.joblib, model_dtw.joblib")
+    svm_path = save_svm_artifact(svm_model, le, kpca_cols, output_dir)
+    dtw_path = save_dtw_artifact(dtw_model, output_dir)
+    print(f"\nModelos guardados: {svm_path}, {dtw_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Clasificador de señas SVM/DTW")
-    parser.add_argument('mode', choices=['train', 'evaluate', 'infer', 'compare'])
+    parser.add_argument('mode', nargs='?', default='compare', choices=['train', 'evaluate', 'infer', 'compare'])
     parser.add_argument('--model', choices=['svm', 'dtw'], required=False, default=None)
     parser.add_argument('--input', help='CSV para inferencia')
     parser.add_argument('--csv', default=CSV_FILE, help='CSV de datos')
+    parser.add_argument('--output-dir', default=DEFAULT_OUTPUT_DIR, help='Directorio para guardar/cargar modelos')
     args = parser.parse_args()
     
     # Validación
     if args.mode in ['train', 'evaluate', 'infer'] and args.model is None:
         parser.error("--model es obligatorio para train/evaluate/infer")
     
-    print(f"DEBUG: modo={args.mode}, modelo={args.model}", flush=True)
-    
-    
-    sequences, labels_dict, kpca_cols = load_data(args.csv, delimiter=None)
+    print(f"DEBUG: modo={args.mode}, modelo={args.model}, output_dir={args.output_dir}", flush=True)
+
+    if args.mode == 'infer':
+        if not args.input:
+            parser.error("--input es obligatorio para infer")
+        run_inference(args.model, args.input, args.output_dir)
+        return
+
+    sequences, labels_dict, kpca_cols = load_data(args.csv, delimiter=DELIMITER)
     if not sequences:
         sys.exit("No hay datos. Revisa el CSV.")
-    
-    # Modo comparación
+
     if args.mode == 'compare':
-        compare_models(sequences, labels_dict, kpca_cols)
+        compare_models(sequences, labels_dict, kpca_cols, args.output_dir)
         return
-    
-    # Resto de modos (train, evaluate, infer)
+
     le = LabelEncoder()
     y_all = le.fit_transform(list(labels_dict.values()))
     video_ids = list(labels_dict.keys())
@@ -323,12 +396,8 @@ def main():
         
         if args.mode == 'train':
             model = train_svm(X_train, y_train)
-            joblib.dump({
-                'model': model, 'le': le,
-                'agg_funcs': AGGREGATION_FUNCTIONS,
-                'n_kpca': len(kpca_cols)
-            }, 'model_svm.joblib')
-            print(" Modelo SVM guardado")
+            path = save_svm_artifact(model, le, kpca_cols, args.output_dir)
+            print(f"Modelo SVM guardado en {path}")
         
         elif args.mode == 'evaluate':
             model = train_svm(X_train, y_train)
@@ -346,8 +415,8 @@ def main():
         if args.mode == 'train':
             dtw = DTWClassifier()
             dtw.fit(train_seq, train_lab)
-            joblib.dump({'model': dtw, 'le': dtw.le}, 'model_dtw.joblib')
-            print("Modelo DTW guardado")
+            path = save_dtw_artifact(dtw, args.output_dir)
+            print(f"Modelo DTW guardado en {path}")
         
         elif args.mode == 'evaluate':
             dtw = DTWClassifier()

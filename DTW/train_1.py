@@ -358,20 +358,20 @@ def train_svm(X_train, y_train):
 def compare_models(sequences, labels_dict, feature_cols, feature_mode, output_dir):
     """Compara SVM y DTW con el mismo split de datos."""
     print()
-    print('### COMPARACI?N SVM vs DTW ###')
+    print('### COMPARACION SVM vs DTW ###')
 
     le = LabelEncoder()
     y_all = le.fit_transform(list(labels_dict.values()))
     video_ids = list(labels_dict.keys())
 
-    print('N?mero de secuencias:', len(sequences))
+    print('Numero de secuencias:', len(sequences))
     print('IDs:', list(sequences.keys()))
     ids_train, ids_test = train_test_split(
         video_ids, test_size=TEST_SIZE, stratify=y_all, random_state=RANDOM_STATE
     )
     print(f'DEBUG: Train={len(ids_train)} videos, Test={len(ids_test)} videos', flush=True)
 
-    print('DEBUG: Extrayendo caracter?sticas SVM...', flush=True)
+    print('DEBUG: Extrayendo caracteristicas SVM...', flush=True)
     X_all = prepare_svm_data(sequences)
     train_idx = [video_ids.index(v) for v in ids_train]
     test_idx = [video_ids.index(v) for v in ids_test]
@@ -401,24 +401,24 @@ def compare_models(sequences, labels_dict, feature_cols, feature_mode, output_di
 
     print()
     print('=' * 60)
-    print(' COMPARACION SVM vs DTW (mismo test set)')
+    print(' COMPARACION SVM vs DTW (same test set)')
     print('=' * 60)
-    print(f"{'Metrica':<20} {'SVM':<15} {'DTW':<15}")
-    print('-' * 50)
-    print(f"{'Accuracy':<20} {svm_acc:<15.4f} {dtw_acc:<15.4f}")
-    print(f"{'F1 Macro':<20} {svm_f1:<15.4f} {dtw_f1:<15.4f}")
+    print(f"{'Metric':<20} {'SVM':>12} {'DTW':>12}")
+    print('-' * 46)
+    print(f"{'Accuracy':<20} {svm_acc:>12.4f} {dtw_acc:>12.4f}")
+    print(f"{'F1 Macro':<20} {svm_f1:>12.4f} {dtw_f1:>12.4f}")
     print('=' * 60)
 
     print()
-    print('>>> Informe SVM:')
+    print('>>> Report SVM:')
     print(classification_report(y_test_svm, svm_pred, target_names=le.classes_, zero_division=0))
-    print('Matriz de confusion SVM:')
+    print('Confusion matrix SVM:')
     print(confusion_matrix(y_test_svm, svm_pred))
 
     print()
-    print('>>> Informe DTW:')
+    print('>>> Report DTW:')
     print(classification_report(le.transform(test_lab_dtw), dtw_pred, target_names=le.classes_, zero_division=0))
-    print('Matriz de confusion DTW:')
+    print('Confusion matrix DTW:')
     print(confusion_matrix(le.transform(test_lab_dtw), dtw_pred))
 
     svm_path = save_svm_artifact(svm_model, le, feature_cols, feature_mode, output_dir)

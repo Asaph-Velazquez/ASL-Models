@@ -1,0 +1,11 @@
+﻿services:
+  sign-training:
+    build: .
+    container_name: TRANSFORMER
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./output:/app/output
+    command: python -u train_and_evaluate.py

@@ -1,0 +1,11 @@
+,help,i_or_me,light,need,no,paper,pillow,remote_control,service,towel
+help,8,0,0,0,0,0,0,0,0,0
+i_or_me,0,6,0,0,0,0,0,0,0,0
+light,0,0,6,0,0,0,0,0,0,0
+need,0,0,0,6,0,0,0,0,0,0
+no,0,0,0,0,5,0,0,0,1,0
+paper,0,0,0,0,0,6,0,0,0,0
+pillow,0,0,0,0,0,0,8,0,0,0
+remote_control,0,0,0,0,0,0,0,6,0,0
+service,0,0,0,0,0,0,0,0,6,0
+towel,0,0,0,0,0,0,0,0,0,8

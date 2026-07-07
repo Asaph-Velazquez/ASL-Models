@@ -1,0 +1,14 @@
+﻿services:
+  sign-recognition:
+    build: .
+    container_name: MIX_ATENCION
+    environment:
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./dataset:/app/dataset
+      - ./model:/app/model
+      - ./output:/app/output
+      - ./logs:/app/logs
+    command: python -u train_and_evaluate.py

@@ -1,0 +1,18 @@
+Mix Atencion - Metrics Report
+================================
+Accuracy: 0.9326
+Precision weighted: 0.9384
+Recall weighted: 0.9326
+F1 weighted: 0.9337
+Precision macro: 0.9271
+Recall macro: 0.9355
+F1 macro: 0.9292
+
+Training summary
+----------------
+Best train accuracy: 0.9561
+Best val accuracy: 0.9432
+Min train loss: 0.2781
+Min val loss: 0.3215
+
+Model path: model/best_model.keras

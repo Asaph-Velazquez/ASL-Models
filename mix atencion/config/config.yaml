@@ -1,0 +1,28 @@
+# config/config.yaml
+data:
+  raw_path: "data/raw/dataset.csv"
+  processed_path: "data/processed/"
+  max_sequence_length: 30
+  test_size: 0.15
+  val_size: 0.15
+  random_state: 42
+
+model:
+  type: "lstm_attention"  # or "cnn_lstm" or "svm"
+  lstm_units: [128, 64]
+  dropout_rate: 0.3
+  dense_units: 64
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 32
+  epochs: 100
+
+training:
+  early_stopping_patience: 15
+  reduce_lr_patience: 8
+  min_lr: 1e-6
+  checkpoint_dir: "model/checkpoints"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

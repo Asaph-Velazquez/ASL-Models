@@ -1,0 +1,65 @@
+# Rutas y parametros de datos (relativas a /app en Docker); el usuario solo suele tocar paths.*.
+paths:
+  dataset_root: dataset                # montado desde ./Dataset (solo lectura)
+  vocab_csv: asl_hotel_vocabulary.csv
+  signer_manifest: signer_manifest.csv
+  cache_dir: outputs/cache             # landmarks .npy + clips_manifest.csv + layout.json
+  reports_dir: reports
+  outputs_dir: outputs
+
+folders:  # mapeo de carpetas a glosas (§4.1 del diseno). NO tocar salvo cambio de estructura.
+  isolated_dir: Aisladas
+  letters_dir: Aisladas/letras
+  numbers_dir: Aisladas/numbers
+  letters_train: Train_Alphabet
+  letters_test: Test_Alphabet
+  numbers_train: Train_Nums
+  numbers_test: Test_Nums
+  letter_prefix: "FS-"
+  number_prefix: "NUM-"
+  blank_folder: Blank                  # clase especial: "no hay mano" (negativo del alfabeto)
+  special_classes: [BLANK]             # clases fuera del vocabulario CSV (se anexan a la cabeza 4A)
+  video_exts: [".mp4", ".mov", ".avi", ".mkv", ".webm"]
+  image_exts: [".png", ".jpg", ".jpeg"]
+
+phrases:
+  dir: Frases                          # relativo a dataset_root
+  phrase_label_source: filename        # filename | annotations
+  annotations_csv: Frases/annotations.csv   # usado si phrase_label_source: annotations
+
+how2sign:                              # fuente extra de frases continuas (Fase 3, peso <1)
+  enabled: true                        # si el manifiesto aun no existe, solo se avisa
+  root: external/how2sign
+  manifest: external/how2sign/how2sign_manifest.csv   # lo escribe map_how2sign_manifest.py
+
+splits:
+  mode: signer_independent             # signer_independent | per_video
+  test_fraction: 0.2
+  seed: 42
+
+static_to_sequence:                    # imagenes -> mini-secuencia (§4.3)
+  n_frames: 12
+  jitter_std: 0.01
+
+landmarks:                             # Capa 0 (MediaPipe Holistic, SIN cara)
+  pose_upper_indices: [0, 11, 12, 13, 14, 15, 16, 23, 24]
+  hand_points: 21
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+
+video_filters:                         # Capa 0-bis: filtrado adaptativo automatico
+  enabled: true
+  target_fps: 25
+  low_luma_threshold: 60               # luminancia media < umbral -> CLAHE + brillo
+  blur_threshold: 60.0                 # varianza laplaciano < umbral -> nitidez
+  noise_threshold: 12.0                # ruido estimado > umbral -> denoise
+  min_detection_rate: 0.5              # deteccion de manos < 50% frames -> reintento con filtros/zoom
+  hand_crop_margin: 0.35               # margen del recorte/zoom a la region de manos
+
+normalization:                         # Capa 1: dos caminos por functional_class
+  hand_relative_classes: [letter, number]   # camino B (relativo a la mano); el resto camino A (cuerpo)
+  interpolate_missing: true
+
+trace:                                 # §9-bis: trazabilidad por capa
+  enabled: false                       # smoke test y demo lo fuerzan a true
+  max_sample_values: 6

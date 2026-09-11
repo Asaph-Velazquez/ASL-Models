@@ -1,0 +1,53 @@
+# --- Python caches and build artifacts ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.coverage
+htmlcov/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Tool caches ---
+.ipynb_checkpoints/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# --- Generated outputs ---
+outputs/
+output/
+checkpoints/
+reports/
+external/
+
+# --- Datasets and videos ---
+Dataset/
+**/*.mp4
+**/*.avi
+**/*.mov
+**/*.mkv
+**/*.webm
+
+# --- Local workspace files ---
+.claude/
+.sisyphus/
+.vscode/
+.idea/
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini

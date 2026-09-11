@@ -1,0 +1,32 @@
+# FASE 1: pre-entreno del encoder con letras/numeros (imagenes -> mini-secuencia)
+data_config: configs/data.yaml
+phase: phase1
+seed: 42
+deterministic: true
+
+sources: [letters, numbers]     # solo imagenes en esta fase
+
+model:
+  spatial:
+    type: mlp                   # mlp | gcn
+    hidden_dims: [256, 256]
+    dropout: 0.2
+  temporal:
+    type: bilstm                # bilstm | tcn
+    hidden_dim: 256
+    num_layers: 2
+    dropout: 0.2
+
+train:
+  epochs: 30
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.0001
+  max_seq_len: 64
+  early_stop_patience: 8
+  num_workers: 4
+
+init_from: null                 # sin inicializacion previa
+checkpoint_dir: checkpoints/phase1
+log_dir: reports/tensorboard/phase1
+trace: false

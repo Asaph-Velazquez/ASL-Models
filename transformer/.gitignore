@@ -1,0 +1,20 @@
+# Input datasets
+data/*.csv
+
+# Trained models and generated reports
+models/
+output/
+
+# Local Python files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets and editor files
+.env
+.env.*
+!.env.example
+*.log
+.vscode/
+.idea/

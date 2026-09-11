@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  sign-recognition:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./model:/app/model
+      - ./logs:/app/logs
+      - ./results:/app/results
+      - ./artifacts:/app/artifacts
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python train_and_evaluate.py

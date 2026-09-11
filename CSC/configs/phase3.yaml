@@ -1,0 +1,42 @@
+# FASE 3: CTC continuo mezclando sintetico + frases reales + How2Sign (pseudo-glosas, peso debil).
+data_config: configs/data.yaml
+phase: phase3
+seed: 42
+deterministic: true
+
+synthetic_dir: outputs/synthetic
+
+model:
+  spatial:
+    type: mlp
+    hidden_dims: [256, 256]
+    dropout: 0.2
+  temporal:
+    type: bilstm
+    hidden_dim: 256
+    num_layers: 2
+    dropout: 0.2
+
+train:
+  epochs: 80
+  batch_size: 16
+  lr: 0.0003
+  weight_decay: 0.0001
+  max_seq_len: 512
+  early_stop_patience: 12
+  num_workers: 4
+  real_weight: 2.0            # peso de las frases reales frente a las sinteticas en la mezcla
+  synthetic_only_epochs: 10   # curriculo: primeras epocas solo sintetico
+  how2sign_weight: 0.5        # peso de las frases How2Sign (pseudo-glosas = supervision DEBIL); 0 las excluye
+  how2sign_in_val: false      # false: How2Sign NO participa en val/test (la seleccion de modelo sigue siendo del dominio)
+
+init_from: checkpoints/phase2/best.pt   # reusa encoder de la Fase 2
+checkpoint_dir: checkpoints/phase3
+log_dir: reports/tensorboard/phase3
+
+decode:                       # Capa 5
+  beam_size: 8
+  lm_ngram: 2                 # n-grama de glosas construido del corpus sintetico
+  lm_alpha: 0.3
+  lm_beta: 0.6                # bonus por palabra
+trace: false

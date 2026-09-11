@@ -1,15 +1,15 @@
-# Configuración del modelo
+# Configuracion del modelo
 MODEL_CONFIG = {
     "d_model": 256,
     "nhead": 8,
     "num_layers": 4,
     "dim_feedforward": 512,
     "dropout": 0.1,
-    "max_seq_len": 100,
-    "feature_dim": 150,  
+    "max_seq_len": 160,
+    "feature_dim": 63,  # Fallback para el dataset actual; el script infiere el valor real.
 }
 
-# Configuración de entrenamiento
+# Configuracion de entrenamiento
 TRAINING_CONFIG = {
     "batch_size": 32,
     "learning_rate": 3e-4,

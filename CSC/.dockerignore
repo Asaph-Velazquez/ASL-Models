@@ -1,0 +1,16 @@
+Dataset/
+dataset/
+checkpoints/
+reports/
+outputs/
+external/
+dummy_clips/
+synthetic_out/
+**/__pycache__/
+**/*.pyc
+.git/
+.DS_Store
+*.npy
+*.mp4
+*.png
+!docs/**

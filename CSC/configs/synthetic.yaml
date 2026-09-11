@@ -1,0 +1,20 @@
+# Generacion de frases continuas sinteticas (para CTC) + corpus paralelo (para T5)
+data_config: configs/data.yaml
+
+clips_manifest: outputs/cache/clips_manifest.csv   # lo produce data/preprocess.py
+out_dir: outputs/synthetic
+
+n_train: 4000
+n_val: 400
+n_test: 400
+seed: 42
+
+concat:            # concatenacion de clips aislados
+  transition_frames_min: 3
+  transition_frames_max: 8
+  time_warp: [0.85, 1.15]
+  trim_rest_ratio: 0.15
+
+augment:
+  jitter: 0.01
+  frame_drop_p: 0.05

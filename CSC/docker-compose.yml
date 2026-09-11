@@ -1,0 +1,76 @@
+# Servicios del pipeline; cada paso se dispara con una linea (ver README). GPU en Windows/WSL2; en Mac solo `smoke`.
+
+x-base: &base
+  build: .
+  image: asl-hotel:latest
+  platform: linux/amd64
+  volumes:
+    - ./Dataset:/app/dataset:ro
+    - ./asl_hotel_vocabulary.csv:/app/asl_hotel_vocabulary.csv:ro
+    - ./signer_manifest.csv:/app/signer_manifest.csv:ro
+    - ./configs:/app/configs:ro
+    - ./checkpoints:/app/checkpoints
+    - ./reports:/app/reports
+    - ./outputs:/app/outputs
+    - ./external:/app/external
+
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+services:
+  # Verificacion de estructura con datos falsos. CPU, segundos, sin descargas.
+  smoke:
+    <<: *base
+    command: python tests/smoke_test.py
+
+  # How2Sign (CC BY-NC 4.0): baja y filtra clips desde Drive y anexa el mapeo (internet; train ~31G).
+  how2sign:
+    build: .
+    image: asl-hotel:latest
+    platform: linux/amd64
+    volumes:
+      - ./asl_hotel_vocabulary.csv:/app/asl_hotel_vocabulary.csv:ro
+      - ./signer_manifest.csv:/app/signer_manifest.csv   # rw: se anexa el mapeo
+      - ./configs:/app/configs:ro
+      - ./external:/app/external
+    command: bash -c "python data/download_how2sign.py --config configs/how2sign.yaml && python data/map_how2sign_manifest.py --config configs/how2sign.yaml"
+
+  # Valida vocabulario/manifiestos/frases y extrae landmarks (cache .npy)
+  preprocess:
+    <<: [*base, *gpu]
+    command: bash -c "python data/validate_manifest.py --config configs/data.yaml && python data/preprocess.py --config configs/data.yaml"
+
+  # Genera frases sinteticas (CTC) + corpus paralelo glosa->ingles (T5)
+  synthetic:
+    <<: *base
+    command: python synthetic/generator.py --config configs/synthetic.yaml
+
+  # Entrenamiento: pasar la fase como command override, p. ej.:
+  #   docker compose run --rm train python train/train_phase1.py --config configs/phase1.yaml
+  train:
+    <<: [*base, *gpu]
+    command: ["bash", "-c", "echo 'Indica la fase, ej. -> docker compose run --rm train python train/train_phase1.py --config configs/phase1.yaml'"]
+
+  # Metricas + reportes visibles en ./reports
+  eval:
+    <<: [*base, *gpu]
+    command: python eval/metrics.py --config configs/eval.yaml
+
+  # Inferencia sobre un video:
+  #   docker compose run --rm demo python demo/infer.py --video /app/dataset/Frases/MI_VIDEO.mp4
+  demo:
+    <<: [*base, *gpu]
+    command: ["bash", "-c", "echo 'Uso -> docker compose run --rm demo python demo/infer.py --video <ruta dentro de /app>'"]
+
+  # TensorBoard en http://localhost:6006  (puerto configurable con TB_PORT)
+  tensorboard:
+    <<: *base
+    command: tensorboard --logdir /app/reports/tensorboard --host 0.0.0.0 --port 6006
+    ports:
+      - "${TB_PORT:-6006}:6006"

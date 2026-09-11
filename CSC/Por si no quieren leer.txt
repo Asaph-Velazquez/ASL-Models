@@ -1,0 +1,19 @@
+docker compose build
+
+docker compose run --rm how2sign
+
+docker compose run --rm preprocess
+
+docker compose run --rm synthetic
+
+docker compose run --rm train python train/train_phase1.py --config configs/phase1.yaml
+docker compose run --rm train python train/train_phase2.py --config configs/phase2.yaml
+docker compose run --rm train python train/train_phase3.py --config configs/phase3.yaml
+docker compose run --rm train python train/train_phase4.py --config configs/phase4.yaml
+
+docker compose run --rm eval
+
+TensorBoard --- esto es opcional
+
+docker compose up tensorboard
+

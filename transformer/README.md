@@ -1,4 +1,4 @@
-﻿# Transformer
+# Transformer
 
 Modelo de lenguaje de senas basado en PyTorch Transformer.
 
@@ -7,7 +7,21 @@ Modelo de lenguaje de senas basado en PyTorch Transformer.
 - Docker Desktop
 - `data/dataset_35.csv`
 
-## Estructura esperada
+## Esquema esperado del CSV
+
+El pipeline actual detecta automaticamente las features numericas del archivo.
+Para el dataset nuevo espera estas columnas de metadatos:
+
+- `glosa`
+- `video`
+- `frame`
+- `hand_index` y `handedness` son opcionales como metadatos
+
+El resto de columnas numericas se usan como secuencia de entrada. Eso permite
+cargar tanto el dataset nuevo de landmarks como una version anterior con
+`kpca_*`.
+
+## Estructura
 
 - `data/`: CSV de entrada
 - `models/`: modelo entrenado
@@ -45,4 +59,4 @@ run_docker.bat
 ## Notas
 
 - El contenedor ejecuta `train_and_evaluate.py` y termina.
-- Si cambias el CSV, reconstruye o vuelve a ejecutar el contenedor con el mismo volumen `data/`.
+- Si cambias el CSV, vuelve a construir o ejecuta de nuevo el contenedor con el volumen `data/` actualizado.

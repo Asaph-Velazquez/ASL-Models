@@ -1,0 +1,24 @@
+# How2Sign: fuente extra de frases continuas para la Fase 3 (CC BY-NC 4.0; pseudo-glosas, supervision debil).
+data_config: configs/data.yaml
+
+root: external/how2sign            # todo lo descargado vive aqui (montado en Docker)
+signer_manifest: signer_manifest.csv   # el mapeo se ANEXA aqui (idempotente)
+splits: [train, val, test]         # splits OFICIALES de How2Sign; no se recalculan
+keep_zip: false                    # true: conserva los zips tras extraer
+
+drive:                             # IDs oficiales de Google Drive (how2sign.github.io)
+  csv:                             # "English Translation (manually re-aligned)"
+    train: 1dUHSoefk9OxKJnHrHPX--I4tpm9QD0ok    # 5.6M
+    val: 1Vpag7VPfdTCCJSao8Pz14rlPfekRMggI      # 311K
+    test: 1AgwBZW26kFHS4CWNMQTCMPGkBPkH3qCu     # 424K
+  clips_front:                     # "Green Screen RGB clips (frontal view)" por oracion
+    train: 1VX7n0jjW0pW3GEdgOks3z8nqE6iI6EnW    # 31G  (zip)
+    val: 1DhLH8tIBn9HsTzUJUfsEOGcP4l9EvOiO      # 1.7G (zip)
+    test: 1qTIXFsu8M55HrCiaGv7vZ7GkdB3ubjaG     # 2.2G (zip)
+
+filter:                            # aceptacion de oraciones (data/how2sign.py)
+  # Medido 2026-07-06 (61 glosas, train 31165 oraciones): 0.8->144 clips, 0.7->212, 0.6->514. Menor umbral = mas ruido.
+  min_coverage: 0.8                # fraccion de palabras de contenido mapeadas a glosas
+  min_mapped_tokens: 2             # minimo de pseudo-glosas por frase
+  max_tokens: 12                   # maximo de palabras de contenido por frase
+  max_clips_per_split: 0           # tope de clips por split (0 = sin tope)

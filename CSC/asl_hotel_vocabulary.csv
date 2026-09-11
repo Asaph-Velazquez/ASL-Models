@@ -1,0 +1,149 @@
+canonical_gloss,english,functional_class,notes
+WITH,With,relational,
+NONE,none,negation,sena ASL real para 'none/ninguno'
+PLACE,Place,place,
+SHAMPOO,Shampoo,object,
+OTHER,other,quantity,sena ASL real para 'other/otro'
+FORK,Fork,object,posible confusion con SPOON
+SPOON,Spoon,object,posible confusion con FORK
+CAR,Car,service,
+USE,Use,verb,
+STAY,Stay,verb,
+ADD,Add,verb,
+INTERNET,Internet,object,
+IN,In,relational,
+NIGHT,Night,time,
+NUM-0,0,number,confusion con letra O
+NUM-1,1,number,confusion con letra D
+NUM-2,2,number,confusion con K/V
+NUM-3,3,number,
+NUM-4,4,number,
+NUM-5,5,number,
+NUM-6,6,number,confusion con letra W
+NUM-7,7,number,
+NUM-8,8,number,
+NUM-9,9,number,confusion con letra F
+FS-A,letter A,letter,puno - confusion con S/T/E
+FS-B,letter B,letter,
+FS-C,letter C,letter,
+FS-D,letter D,letter,confusion con NUM-1
+FS-E,letter E,letter,confusion con A/S/T
+FS-F,letter F,letter,confusion con NUM-9
+FS-G,letter G,letter,
+FS-H,letter H,letter,
+FS-I,letter I,letter,
+FS-J,letter J,letter,DINAMICA - entrenar con VIDEO (FS-J) e IMAGEN estatica
+FS-K,letter K,letter,confusion con NUM-2/V
+FS-L,letter L,letter,
+FS-M,letter M,letter,confusion con N
+FS-N,letter N,letter,confusion con M
+FS-O,letter O,letter,confusion con NUM-0
+FS-P,letter P,letter,
+FS-Q,letter Q,letter,
+FS-R,letter R,letter,
+FS-S,letter S,letter,confusion con A/E/T
+FS-T,letter T,letter,confusion con A/S/E
+FS-U,letter U,letter,confusion con V
+FS-V,letter V,letter,confusion con U/K/NUM-2
+FS-W,letter W,letter,confusion con NUM-6
+FS-X,letter X,letter,
+FS-Y,letter Y,letter,
+FS-Z,letter Z,letter,DINAMICA - entrenar con VIDEO (FS-Z) e IMAGEN estatica
+NUMBER,Number,object,
+I,I,pronoun,
+YOU,You,pronoun,
+MY,My,pronoun,
+NOW-TODAY,now / today,time,un solo signo cubre 'now' y 'today'
+LATER,Later,time,
+DAY,Day,time,
+WINDOW,Window,object,
+MORNING,Morning,time,
+TOMORROW,Tomorrow,time,
+TIME,Time,time,
+ROOM,Room,place,
+BATHROOM-TOILET,bathroom / toilet,place,un solo signo cubre 'bathroom' y 'toilet'
+AIRPORT,Airport,place,
+RESTAURANT,Restaurant,place,
+HOTEL,Hotel,place,
+FLOOR,Floor,place,
+BED,Bed,object,
+TOWEL,Towel,object,
+PILLOW,Pillow,object,
+BLANKET,Blanket,object,
+SHEET,Sheet,object,cama/lenceria
+TRASH,Trash,object,
+PAPER,Paper,object,
+KEY,Key,object,
+FURNITURE,Furniture,object,
+LIGHT,Light,object,
+SHOWER,Shower,object,
+TV,TV,object,
+AC,air conditioning,object,
+HEATER,Heater,object,
+WIFI,Wi-Fi,object,
+PASSWORD,Password,object,
+INFORMATION,Information,object,
+SNACK,Snack,food,
+SANDWICH,Sandwich,food,
+SALAD,Salad,food,
+SOUP,Soup,food,
+FRUIT,Fruit,food,
+JUICE,Juice,food,
+HAMBURGER,hamburger,food,
+SERVICE,Service,service,
+NEED,Need,verb,cercana a WANT - posible confusion
+FOOD,Food,food,
+HELP,Help,verb,
+NO,No,negation,
+REMOTE-CONTROL,remote control,object,multiword con guion (el espacio separa glosas en CTC)
+SOAP,Soap,object,
+SAFE,Safe,object,
+WATER,Water,food,
+BREAKFAST,Breakfast,food,
+SODA,Soda,food,
+COFFEE,Coffee,food,
+TEA,Tea,food,
+ICE,Ice,food,
+WANT,Want,verb,
+BRING,Bring,verb,
+CLEAN,Clean,verb,
+ORDER,Order,verb,
+CHECK,Check,verb,
+CALL,Call,verb,
+REQUEST,Request,verb,
+EAT,Eat,verb,
+CAN,Can,verb,
+GIVE,Give,verb,
+WORK,Work,verb,
+LIKE,Like,verb,
+MAKE,Make,verb,
+INCLUDE,Include,verb,
+GO,Go,verb,
+BE,Be,verb,
+ARRIVE,Arrive,verb,
+LEAVE,Leave,verb,
+OPEN,Open,verb,
+CLOSE,Close,verb,
+WAIT,Wait,verb,
+EXTEND,Extend,verb,
+CHECK-OUT,Check out,verb,
+CHANGE,Change,verb,
+FIX,Fix,verb,
+BROKEN,Broken,adjective,
+COLD,Cold,adjective,confusion con HOT en hands-only
+HOT,Hot,adjective,confusion con COLD en hands-only
+DIRTY,Dirty,adjective,
+LOST,Lost,adjective,
+LOUD,Loud,adjective,
+PROBLEM,Problem,problem,
+NOISE,Noise,problem,
+LEAK,Leak,problem,
+PLUMBING,Plumbing,problem,
+ELECTRICITY,Electricity,problem,
+PLUG,Plug,problem,
+DAMAGED,Damaged,adjective,
+NOTHING,Nothing,negation,
+MORE,More,quantity,
+EXTRA,Extra,quantity,
+AGAIN,Again,quantity,
+ANOTHER,Another,quantity,

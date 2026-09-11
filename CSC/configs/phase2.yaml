@@ -1,0 +1,33 @@
+# FASE 2: clasificacion aislada sobre TODO el vocabulario (videos + imagenes)
+data_config: configs/data.yaml
+phase: phase2
+seed: 42
+deterministic: true
+
+sources: [videos, letters, numbers]
+
+model:                          # debe coincidir con phase1 para poder inicializar
+  spatial:
+    type: mlp
+    hidden_dims: [256, 256]
+    dropout: 0.2
+  temporal:
+    type: bilstm
+    hidden_dim: 256
+    num_layers: 2
+    dropout: 0.2
+
+train:
+  epochs: 60
+  batch_size: 32
+  lr: 0.0005
+  weight_decay: 0.0001
+  max_seq_len: 128
+  early_stop_patience: 10
+  num_workers: 4
+
+init_from: checkpoints/phase1/best.pt   # encoder pre-entrenado con letras/numeros
+freeze_spatial_epochs: 3                # epocas iniciales con encoder espacial congelado
+checkpoint_dir: checkpoints/phase2
+log_dir: reports/tensorboard/phase2
+trace: false

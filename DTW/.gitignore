@@ -1,0 +1,21 @@
+# Input datasets (keep them outside Git)
+datos_*.csv
+
+# Trained models and evaluation results
+*.joblib
+models/
+results/
+
+# Local Python files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets, logs and editor files
+.env
+.env.*
+!.env.example
+*.log
+.vscode/
+.idea/

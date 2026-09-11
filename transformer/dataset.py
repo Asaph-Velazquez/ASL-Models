@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from collections import defaultdict
 import random
+
 
 class KPCA_Dataset(Dataset):
     def __init__(self, landmarks, labels, max_seq_len=100, augment=False):
@@ -13,22 +12,25 @@ class KPCA_Dataset(Dataset):
         self.labels = labels
         self.max_seq_len = max_seq_len
         self.augment = augment
-        
-        # Calcular estadísticas
-        all_data = np.concatenate([l for l in landmarks], axis=0)
+
+        if len(landmarks) == 0:
+            raise ValueError("No se recibieron secuencias para construir el dataset.")
+
+        # Estadisticas globales sobre todas las secuencias
+        all_data = np.concatenate([seq for seq in landmarks], axis=0)
         self.mean = np.mean(all_data, axis=0)
         self.std = np.std(all_data, axis=0)
         self.std[self.std < 1e-6] = 1.0
-    
+
     def __len__(self):
         return len(self.landmarks)
-    
+
     def __getitem__(self, idx):
         landmarks = self.landmarks[idx].copy()
         label = self.labels[idx]
-        
+
         seq_len = landmarks.shape[0]
-        
+
         # Truncar o padding
         if seq_len > self.max_seq_len:
             if self.augment:
@@ -40,106 +42,115 @@ class KPCA_Dataset(Dataset):
         elif seq_len < self.max_seq_len:
             pad_len = self.max_seq_len - seq_len
             landmarks = np.vstack([landmarks, np.zeros((pad_len, landmarks.shape[1]))])
-        
-        # Normalización
+
+        # Normalizacion
         landmarks = (landmarks - self.mean) / self.std
-        
-        # Data augmentation
+
         if self.augment:
-            # Ruido
             noise = np.random.normal(0, 0.02, landmarks.shape)
             landmarks = landmarks + noise
-            
-            # Escala
+
             scale = 1.0 + np.random.uniform(-0.15, 0.15)
             landmarks = landmarks * scale
-        
+
         return torch.FloatTensor(landmarks), torch.LongTensor([label])[0]
 
+
+def _infer_feature_columns(df):
+    """Detecta columnas de features numericas ignorando metadatos."""
+    metadata_cols = {'glosa', 'video', 'frame', 'hand_index', 'handedness'}
+    candidate_cols = [c for c in df.columns if c not in metadata_cols]
+
+    if not candidate_cols:
+        raise ValueError("No se encontraron columnas de features en el CSV.")
+
+    feature_df = df[candidate_cols].apply(pd.to_numeric, errors='coerce')
+
+    if feature_df.isna().any().any():
+        bad_cols = feature_df.columns[feature_df.isna().any()].tolist()
+        raise ValueError(
+            "Hay columnas de features con valores no numericos o vacios: "
+            f"{bad_cols}"
+        )
+
+    return candidate_cols
+
+
 def load_data(csv_path, test_size=0.15, val_size=0.15, random_seed=42):
-    """Carga y prepara los datos del CSV"""
+    """Carga y prepara los datos del CSV."""
     print("Cargando datos...")
     df = pd.read_csv(csv_path)
-    
-    # Obtener glosas únicas
-    glosas = sorted(df['glosa'].unique())
+
+    required_cols = {'glosa', 'video', 'frame'}
+    missing_required = required_cols - set(df.columns)
+    if missing_required:
+        raise ValueError(
+            f"El CSV no contiene las columnas requeridas: {sorted(missing_required)}"
+        )
+
+    feature_cols = _infer_feature_columns(df)
+
+    glosas = sorted(df['glosa'].dropna().unique())
     glosa_to_idx = {g: i for i, g in enumerate(glosas)}
-    
+
     print(f"Glosas encontradas: {len(glosas)}")
     print(f"Total de filas: {len(df)}")
-    
-    # Obtener videos únicos
-    videos = df['video'].unique()
-    print(f"Total de videos: {len(videos)}")
-    
-    # Procesar cada video
+    print(f"Features detectadas: {len(feature_cols)}")
+
     landmarks_data = []
     labels = []
-    video_info = []
-    
-    kpca_cols = [f'kpca_{i}' for i in range(150)]
-    
-    for video_name in videos:
-        video_df = df[df['video'] == video_name].sort_values('frame')
-        
+
+    for video_name, video_df in df.groupby('video', sort=False):
+        sort_cols = ['frame']
+        if 'hand_index' in video_df.columns:
+            sort_cols.append('hand_index')
+        video_df = video_df.sort_values(sort_cols)
+
         glosa = video_df['glosa'].iloc[0]
         glosa_idx = glosa_to_idx[glosa]
-        
-        # Extraer KPCA features
-        kpca_data = video_df[kpca_cols].values
-        
-        if len(kpca_data) < 10:
-            continue
-        
-        # Limitar frames
-        if len(kpca_data) > 100:
-            indices = np.linspace(0, len(kpca_data) - 1, 100, dtype=int)
-            kpca_data = kpca_data[indices]
-        
-        landmarks_data.append(kpca_data)
-        labels.append(glosa_idx)
-        video_info.append({
-            'video': video_name,
-            'glosa': glosa,
-            'frames': len(kpca_data)
-        })
-    
-    print(f"Videos procesados: {len(landmarks_data)}")
-    
-    # Dividir por signante (mejor para evaluación realista)
-    return split_by_signer(landmarks_data, labels, glosas, test_size, val_size, random_seed)
 
-def split_by_signer(landmarks, labels, glosas, test_size, val_size, random_seed):
-    """Divide por signante (asumiendo que el nombre del video contiene ID)"""
-    import re
-    
-    # Extraer signante del nombre del video
-    signer_indices = defaultdict(list)
-    for idx, info in enumerate(landmarks):
-        # Extraer número del video (asumiendo formato help_000001.mp4)
-        numbers = re.findall(r'\d+', str(idx))
-        signer_id = int(numbers[0]) % 10 if numbers else 0
-        signer_indices[signer_id].append(idx)
-    
-    # Dividir signantes
-    random.seed(random_seed)
-    signers = list(signer_indices.keys())
-    random.shuffle(signers)
-    
-    n_train = int(len(signers) * (1 - test_size - val_size))
-    n_val = int(len(signers) * val_size)
-    
-    train_signers = signers[:n_train]
-    val_signers = signers[n_train:n_train + n_val]
-    test_signers = signers[n_train + n_val:]
-    
-    train_idx = [i for s in train_signers for i in signer_indices[s]]
-    val_idx = [i for s in val_signers for i in signer_indices[s]]
-    test_idx = [i for s in test_signers for i in signer_indices[s]]
-    
-    print(f"\nDivisión por signante:")
-    print(f"  Train: {len(train_idx)} videos de {len(train_signers)} signantes")
-    print(f"  Val: {len(val_idx)} videos de {len(val_signers)} signantes")
-    print(f"  Test: {len(test_idx)} videos de {len(test_signers)} signantes")
-    
-    return (train_idx, val_idx, test_idx, glosas)
+        sequence_data = video_df[feature_cols].to_numpy(dtype=np.float32)
+        if len(sequence_data) == 0:
+            continue
+
+        landmarks_data.append(sequence_data)
+        labels.append(glosa_idx)
+
+    print(f"Videos procesados: {len(landmarks_data)}")
+
+    if test_size + val_size >= 1.0:
+        raise ValueError("test_size + val_size debe ser menor que 1.0")
+
+    indices = np.arange(len(landmarks_data))
+    labels_arr = np.array(labels)
+
+    train_idx, temp_idx = train_test_split(
+        indices,
+        test_size=(test_size + val_size),
+        random_state=random_seed,
+        stratify=labels_arr
+    )
+
+    temp_labels = labels_arr[temp_idx]
+    test_ratio_in_temp = test_size / (test_size + val_size)
+
+    val_idx, test_idx = train_test_split(
+        temp_idx,
+        test_size=test_ratio_in_temp,
+        random_state=random_seed,
+        stratify=temp_labels
+    )
+
+    print("\nDivision por video:")
+    print(f"  Train: {len(train_idx)} videos")
+    print(f"  Val: {len(val_idx)} videos")
+    print(f"  Test: {len(test_idx)} videos")
+
+    return (
+        train_idx.tolist(),
+        val_idx.tolist(),
+        test_idx.tolist(),
+        glosas,
+        landmarks_data,
+        labels,
+    )

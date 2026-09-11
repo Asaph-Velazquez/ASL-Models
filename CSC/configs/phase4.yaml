@@ -1,0 +1,23 @@
+# FASE 4: traduccion glosa->ingles con T5-small afinado en el corpus sintetico (acotado al dominio).
+data_config: configs/data.yaml
+phase: phase4
+seed: 42
+deterministic: true
+
+parallel_corpus_dir: outputs/synthetic   # parallel_corpus_{train,val,test}.csv
+model_name: t5-small                     # se descarga una vez a external/hf_cache
+source_prefix: "translate ASL gloss to English: "
+
+train:
+  epochs: 15
+  batch_size: 16
+  lr: 0.0003
+  weight_decay: 0.01
+  max_source_len: 64
+  max_target_len: 64
+  early_stop_patience: 4
+  num_workers: 2
+
+checkpoint_dir: checkpoints/phase4
+log_dir: reports/tensorboard/phase4
+trace: false

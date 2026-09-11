@@ -28,8 +28,8 @@ class SignLanguageTransformer(nn.Module):
                  num_layers=4,
                  dim_feedforward=512,
                  dropout=0.1,
-                 max_seq_len=100,
-                 feature_dim=150):
+                 max_seq_len=160,
+                 feature_dim=63):
         super().__init__()
         
         self.d_model = d_model

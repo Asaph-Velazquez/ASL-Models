@@ -1,0 +1,18 @@
+# Evaluacion: metricas + reportes visibles en reports/
+data_config: configs/data.yaml
+seed: 42
+
+checkpoints:
+  isolated: checkpoints/phase2/best.pt      # accuracy top-1/5 + matriz de confusion
+  ctc: checkpoints/phase3/best.pt           # WER de glosas (sintetico test Y frases reales)
+  translator: checkpoints/phase4            # BLEU / ROUGE-L / exact-match
+
+synthetic_dir: outputs/synthetic
+phase3_config: configs/phase3.yaml
+phase4_config: configs/phase4.yaml
+
+reports_dir: reports
+qualitative_n: 30            # filas de la tabla cualitativa
+skeleton_animation_n: 2      # animaciones de esqueleto de muestras sinteticas
+batch_size: 16
+trace: false
